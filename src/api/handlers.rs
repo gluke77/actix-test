@@ -1,8 +1,8 @@
 use super::models::{User, UserInfo};
 use super::ws_handlers::echo;
 use actix_web::{delete, get, post, put, rt, web, HttpRequest, Responder, Result};
-use log::info;
 use serde::Deserialize;
+use tracing::info;
 
 #[derive(Deserialize, Debug)]
 struct UserPath {
@@ -17,10 +17,12 @@ pub async fn user_types() -> Result<impl Responder> {
     Ok(web::Json(types))
 }
 
+#[tracing::instrument]
 async fn nested() {
     deeper_nested().await
 }
 
+#[tracing::instrument]
 async fn deeper_nested() {
     info!("From deeper_nested");
 }
