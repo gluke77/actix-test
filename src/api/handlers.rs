@@ -1,6 +1,7 @@
 use super::models::{User, UserInfo};
+use super::utils::{child_port, client};
 use super::ws_handlers::echo;
-use actix_web::{delete, get, post, put, rt, web, HttpRequest, HttpResponse, Result};
+use actix_web::{delete, get, post, put, rt, web, HttpRequest, HttpResponse};
 use serde::Deserialize;
 use tracing::info;
 
@@ -28,27 +29,27 @@ async fn deeper_nested() {
 }
 
 #[get("/users/{type}/{id}")]
-pub async fn user_by_id(path: web::Path<UserPath>) -> Result<web::Json<User>> {
+pub async fn user_by_id(path: web::Path<UserPath>) -> web::Json<User> {
     let user = User {
         id: path.id.to_owned(),
         r#type: path.r#type.clone(),
         name: "aName".to_owned(),
     };
-    Ok(web::Json(user))
+    web::Json(user)
 }
 
 #[delete("/users/{type}/{id}")]
-pub async fn delete(path: web::Path<UserPath>) -> Result<web::Json<User>> {
+pub async fn delete(path: web::Path<UserPath>) -> web::Json<User> {
     let user = User {
         id: path.id.to_owned(),
         r#type: path.r#type.clone(),
         name: "aName".to_owned(),
     };
-    Ok(web::Json(user))
+    web::Json(user)
 }
 
 #[get("/users/{type}")]
-pub async fn users(r#type: web::Path<String>) -> Result<web::Json<Vec<User>>> {
+pub async fn users(r#type: web::Path<String>) -> web::Json<Vec<User>> {
     let users = [
         User {
             id: 1,
@@ -65,33 +66,65 @@ pub async fn users(r#type: web::Path<String>) -> Result<web::Json<Vec<User>>> {
     info!("I can log");
     info!("So do I");
 
-    Ok(web::Json(users.to_vec()))
+    web::Json(users.to_vec())
 }
 
 #[post("/users/{type}")]
-pub async fn create(
-    r#type: web::Path<String>,
-    user_info: web::Json<UserInfo>,
-) -> Result<web::Json<User>> {
+pub async fn create(r#type: web::Path<String>, user_info: web::Json<UserInfo>) -> web::Json<User> {
     let user = User {
         id: 1,
         r#type: r#type.clone(),
         name: user_info.name.clone(),
     };
-    Ok(web::Json(user))
+    web::Json(user)
 }
 
 #[put("/users/{type}/{id}")]
 pub async fn update(
     path: web::Path<UserPath>,
     user_update: web::Json<UserInfo>,
-) -> Result<web::Json<User>> {
+) -> web::Json<User> {
     let user = User {
         id: path.id.to_owned(),
         r#type: path.r#type.clone(),
         name: user_update.name.clone(),
     };
-    Ok(web::Json(user))
+    web::Json(user)
+}
+
+#[get("/parent")]
+pub async fn parent(http_request: HttpRequest) -> String {
+    let headers = http_request.headers();
+
+    // Iterate over the headers and print each header name and value
+    for (name, value) in headers.iter() {
+        info!(
+            "Header: {:?} = {:?}",
+            name,
+            value.to_str().unwrap_or("Invalid UTF-8")
+        );
+    }
+
+    let port = child_port();
+    let client = client();
+    let uri = format!("http://localhost:{}/child", port);
+    client.get(uri).send().await.unwrap().text().await.unwrap()
+}
+
+#[get("/child")]
+pub async fn child(http_request: HttpRequest) -> &'static str {
+    let headers = http_request.headers();
+
+    // Iterate over the headers and print each header name and value
+    for (name, value) in headers.iter() {
+        info!(
+            "Header: {:?} = {:?}",
+            name,
+            value.to_str().unwrap_or("Invalid UTF-8")
+        );
+    }
+
+    "I'm child"
 }
 
 /// Handshake and start basic WebSocket handler.
@@ -99,7 +132,7 @@ pub async fn update(
 /// This example is just for simple demonstration. In reality, you likely want to include
 /// some handling of heartbeats for connection health tracking to free up server resources when
 /// connections die or network issues arise.
-pub async fn echo_ws(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse> {
+pub async fn echo_ws(req: HttpRequest, stream: web::Payload) -> actix_web::Result<HttpResponse> {
     let (res, session, msg_stream) = actix_ws::handle(&req, stream)?;
 
     // spawn websocket handler (and don't await it) so that the response is returned immediately
