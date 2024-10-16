@@ -24,7 +24,7 @@ async fn nested() {
 
 #[tracing::instrument]
 async fn deeper_nested() {
-    info!("From deeper_nested");
+    info!(key = "value", "From deeper_nested");
 }
 
 #[get("/users/{type}/{id}")]
