@@ -1,8 +1,8 @@
 mod api;
 
 use actix_web::middleware::Logger;
-use actix_web::{App, HttpServer};
-use api::handlers::{create, delete, update, user_by_id, user_types, users};
+use actix_web::{web, App, HttpServer};
+use api::handlers::{create, delete, echo_ws, update, user_by_id, user_types, users};
 use env_logger;
 
 #[actix_web::main]
@@ -11,6 +11,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
+            .service(web::resource("/ws").route(web::get().to(echo_ws)))
             .service(user_types)
             .service(user_by_id)
             .service(create)
