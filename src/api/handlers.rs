@@ -1,6 +1,7 @@
 use super::models::{User, UserInfo};
 use super::ws_handlers::echo;
 use actix_web::{delete, get, post, put, rt, web, HttpRequest, HttpResponse, Result};
+use apistos::api_operation;
 use serde::Deserialize;
 use tracing::info;
 
@@ -10,6 +11,7 @@ struct UserPath {
     id: u32,
 }
 
+#[api_operation]
 #[get("/user-types")]
 pub async fn user_types() -> web::Json<Vec<String>> {
     let types = ["a".to_owned(), "b".to_owned()];
@@ -47,7 +49,8 @@ pub async fn delete(path: web::Path<UserPath>) -> Result<web::Json<User>> {
     Ok(web::Json(user))
 }
 
-#[get("/users/{type}")]
+// #[get("/users/{type}")]
+#[api_operation]
 pub async fn users(r#type: web::Path<String>) -> Result<web::Json<Vec<User>>> {
     let users = [
         User {
