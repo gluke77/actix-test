@@ -1,5 +1,6 @@
 use super::models::{User, UserInfo};
-use actix_web::{delete, get, post, put, web, Responder, Result};
+use super::ws_handlers::echo;
+use actix_web::{delete, get, post, put, rt, web, HttpRequest, Responder, Result};
 use log::info;
 use serde::Deserialize;
 
@@ -12,7 +13,16 @@ struct UserPath {
 #[get("/user-types")]
 pub async fn user_types() -> Result<impl Responder> {
     let types = ["a", "b"];
+    nested().await;
     Ok(web::Json(types))
+}
+
+async fn nested() {
+    deeper_nested().await
+}
+
+async fn deeper_nested() {
+    info!("From deeper_nested");
 }
 
 #[get("/users/{type}/{id}")]
@@ -80,4 +90,18 @@ pub async fn update(
         name: user_update.name.clone(),
     };
     Ok(web::Json(user))
+}
+
+/// Handshake and start basic WebSocket handler.
+///
+/// This example is just for simple demonstration. In reality, you likely want to include
+/// some handling of heartbeats for connection health tracking to free up server resources when
+/// connections die or network issues arise.
+pub async fn echo_ws(req: HttpRequest, stream: web::Payload) -> Result<impl Responder> {
+    let (res, session, msg_stream) = actix_ws::handle(&req, stream)?;
+
+    // spawn websocket handler (and don't await it) so that the response is returned immediately
+    rt::spawn(echo(session, msg_stream));
+
+    Ok(res)
 }
