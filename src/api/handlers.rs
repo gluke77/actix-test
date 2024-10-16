@@ -1,5 +1,6 @@
 use super::models::{User, UserInfo};
 use actix_web::{delete, get, post, put, web, Responder, Result};
+use log::info;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -34,7 +35,6 @@ pub async fn delete(path: web::Path<UserPath>) -> Result<impl Responder> {
     Ok(web::Json(user))
 }
 
-// #[tracing::instrument(fields(request_id = Uuid::new_v4().to_string()))]
 #[get("/users/{type}")]
 pub async fn users(r#type: web::Path<String>) -> Result<impl Responder> {
     let users = [
@@ -49,6 +49,9 @@ pub async fn users(r#type: web::Path<String>) -> Result<impl Responder> {
             name: "anotherName".to_owned(),
         },
     ];
+
+    info!("I can log");
+    info!("So do I");
 
     Ok(web::Json(users))
 }
