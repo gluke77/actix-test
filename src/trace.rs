@@ -1,10 +1,7 @@
-// use opentelemetry::{
-//     global,
-//     // sdk::{propagation::TraceContextPropagator},
-// };
 use opentelemetry::trace::TracerProvider;
 use opentelemetry::KeyValue;
 use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::runtime::Tokio;
 use opentelemetry_sdk::Resource;
 use opentelemetry_semantic_conventions::resource::{SERVICE_NAME, SERVICE_VERSION};
@@ -43,7 +40,7 @@ pub fn init_tracing() {
     // opentelemetry::global::set_tracer_provider(tracer_provider.clone());
 
     // is this to propagate trace context across services?
-    // opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
+    opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
 
     let tracer_provider = init_tracer_provider().unwrap();
 

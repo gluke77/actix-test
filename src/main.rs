@@ -3,7 +3,9 @@ mod trace;
 
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
-use api::handlers::{create, delete, echo_ws, update, user_by_id, user_types, users};
+use api::handlers::{
+    child, create, delete, echo_ws, parent, update, user_by_id, user_types, users,
+};
 
 use tracing::info;
 use tracing_actix_web::TracingLogger;
@@ -16,6 +18,10 @@ async fn main() -> std::io::Result<()> {
 
     info!(key = "value", "Hello");
 
+    let default_port = 8080;
+    let port =
+        std::env::var("PORT").map_or(default_port, |v| v.parse::<u16>().unwrap_or(default_port));
+
     HttpServer::new(|| {
         App::new()
             .service(web::resource("/ws").route(web::get().to(echo_ws)))
@@ -25,10 +31,13 @@ async fn main() -> std::io::Result<()> {
             .service(update)
             .service(delete)
             .service(users)
+            .service(parent)
+            .service(child)
             .wrap(Logger::default())
             .wrap(TracingLogger::default())
+            .wrap(actix_web_opentelemetry::RequestTracing::new())
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("127.0.0.1", port))?
     .run()
     .await
 }
