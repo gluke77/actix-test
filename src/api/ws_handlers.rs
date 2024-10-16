@@ -1,6 +1,6 @@
 use actix_ws::Message;
 use futures_util::StreamExt as _;
-use log::{debug, info, warn};
+use tracing::{debug, info, warn};
 
 /// Echo text & binary messages received from the client and respond to ping messages.
 ///
