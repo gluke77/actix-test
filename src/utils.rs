@@ -12,3 +12,8 @@ pub fn client() -> ClientWithMiddleware {
         .with(TracingMiddleware::default())
         .build()
 }
+
+pub fn port() -> u16 {
+    let default_port = 8080;
+    std::env::var("PORT").map_or(default_port, |v| v.parse::<u16>().unwrap_or(default_port))
+}

@@ -1,7 +1,5 @@
 use super::models::{User, UserInfo};
-use super::utils::{child_port, client};
-use super::ws_handlers::echo;
-use actix_web::{delete, get, post, put, rt, web, HttpRequest, HttpResponse};
+use actix_web::{delete, get, post, put, web};
 use serde::Deserialize;
 use tracing::info;
 
@@ -90,53 +88,4 @@ pub async fn update(
         name: user_update.name.clone(),
     };
     web::Json(user)
-}
-
-#[get("/parent")]
-pub async fn parent(http_request: HttpRequest) -> String {
-    let headers = http_request.headers();
-
-    // Iterate over the headers and print each header name and value
-    for (name, value) in headers.iter() {
-        info!(
-            "Header: {:?} = {:?}",
-            name,
-            value.to_str().unwrap_or("Invalid UTF-8")
-        );
-    }
-
-    let port = child_port();
-    let client = client();
-    let uri = format!("http://localhost:{}/child", port);
-    client.get(uri).send().await.unwrap().text().await.unwrap()
-}
-
-#[get("/child")]
-pub async fn child(http_request: HttpRequest) -> &'static str {
-    let headers = http_request.headers();
-
-    // Iterate over the headers and print each header name and value
-    for (name, value) in headers.iter() {
-        info!(
-            "Header: {:?} = {:?}",
-            name,
-            value.to_str().unwrap_or("Invalid UTF-8")
-        );
-    }
-
-    "I'm child"
-}
-
-/// Handshake and start basic WebSocket handler.
-///
-/// This example is just for simple demonstration. In reality, you likely want to include
-/// some handling of heartbeats for connection health tracking to free up server resources when
-/// connections die or network issues arise.
-pub async fn echo_ws(req: HttpRequest, stream: web::Payload) -> actix_web::Result<HttpResponse> {
-    let (res, session, msg_stream) = actix_ws::handle(&req, stream)?;
-
-    // spawn websocket handler (and don't await it) so that the response is returned immediately
-    rt::spawn(echo(session, msg_stream));
-
-    Ok(res)
 }
