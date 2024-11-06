@@ -45,9 +45,5 @@ pub async fn child(user: web::ReqData<auth::AuthUser>, http_request: HttpRequest
 
     info!("User {:?}", &u);
 
-    if u.permissions.contains(&"admin".to_owned()) {
-        info!("admin");
-    }
-
     "I'm child"
 }
