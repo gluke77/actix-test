@@ -1,4 +1,4 @@
-use crate::AppState;
+use crate::{api::auth, AppState};
 
 use actix_web::{get, web, HttpRequest};
 
@@ -29,7 +29,7 @@ pub async fn parent(http_request: HttpRequest, data: web::Data<AppState>) -> Str
 }
 
 #[get("/child")]
-pub async fn child(http_request: HttpRequest) -> &'static str {
+pub async fn child(user: web::ReqData<auth::AuthUser>, http_request: HttpRequest) -> &'static str {
     let headers = http_request.headers();
 
     // Iterate over the headers and print each header name and value
@@ -39,6 +39,14 @@ pub async fn child(http_request: HttpRequest) -> &'static str {
             name,
             value.to_str().unwrap_or("Invalid UTF-8")
         );
+    }
+
+    let u = user.into_inner();
+
+    info!("User {:?}", &u);
+
+    if u.permissions.contains(&"admin".to_owned()) {
+        info!("admin");
     }
 
     "I'm child"
