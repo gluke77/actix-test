@@ -4,6 +4,8 @@ mod utils;
 
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
+use actix_web_httpauth::middleware::HttpAuthentication;
+use api::auth::token_validator;
 use api::distributed_tracing::{child, parent};
 use api::users::handlers::{create, delete, update, user_by_id, user_types, users};
 use api::ws_handlers::echo_ws;
@@ -43,6 +45,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(TracingLogger::default())
             .wrap(actix_web_opentelemetry::RequestTracing::new())
+            .wrap(HttpAuthentication::bearer(token_validator))
     })
     .bind(("127.0.0.1", utils::port()))?
     .run()
