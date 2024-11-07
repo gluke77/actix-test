@@ -5,7 +5,7 @@ mod utils;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use api::auth::token_validator;
+use api::auth::{login, token_validator, verify};
 use api::distributed_tracing::{child, parent};
 use api::users::handlers::{create, delete, update, user_by_id, user_types, users};
 use api::ws_handlers::echo_ws;
@@ -21,6 +21,7 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv::dotenv().ok();
     //use tracing_subscriber;
     //tracing_subscriber::fmt().init();
     trace::init_tracing();
@@ -34,18 +35,27 @@ async fn main() -> std::io::Result<()> {
                 utils::client(),
             )))
             .service(web::resource("/ws").route(web::get().to(echo_ws)))
-            .service(user_types)
-            .service(user_by_id)
-            .service(create)
-            .service(update)
-            .service(delete)
-            .service(users)
-            .service(parent)
-            .service(child)
+            .service(
+                web::scope("/v1")
+                    .service(user_types)
+                    .service(user_by_id)
+                    .service(create)
+                    .service(update)
+                    .service(delete)
+                    .service(users)
+                    .service(parent)
+                    .service(child)
+                    .wrap(HttpAuthentication::bearer(token_validator)),
+            )
+            .service(login)
+            .service(
+                web::scope("")
+                    .service(verify)
+                    .wrap(HttpAuthentication::bearer(token_validator)),
+            )
             .wrap(Logger::default())
             .wrap(TracingLogger::default())
             .wrap(actix_web_opentelemetry::RequestTracing::new())
-            .wrap(HttpAuthentication::bearer(token_validator))
     })
     .bind(("127.0.0.1", utils::port()))?
     .run()
