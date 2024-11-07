@@ -5,7 +5,7 @@ mod utils;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use api::auth::{login, token_validator, verify};
+use api::auth::{self, login, token_validator, verify, Keys};
 use api::distributed_tracing::{child, parent};
 use api::users::handlers::{create, delete, update, user_by_id, user_types, users};
 use api::ws_handlers::echo_ws;
@@ -17,6 +17,7 @@ use tracing_actix_web::TracingLogger;
 struct AppState {
     child_port: u16,
     client: reqwest_middleware::ClientWithMiddleware,
+    keys: Keys,
 }
 
 #[actix_web::main]
@@ -28,11 +29,16 @@ async fn main() -> std::io::Result<()> {
 
     info!(key = "value", "Hello");
 
-    HttpServer::new(|| {
+    let keys = auth::generate_keys();
+
+    info!("keys generated ok");
+
+    HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(AppState::new(
                 utils::child_port(),
                 utils::client(),
+                keys.clone(),
             )))
             .service(web::resource("/ws").route(web::get().to(echo_ws)))
             .service(

@@ -2,14 +2,13 @@ use crate::AppState;
 
 use actix_web::{error, get, web, Error, HttpRequest};
 
+use actix_web_httpauth::extractors::bearer::BearerAuth;
 use tracing::info;
-
-use super::auth::AuthToken;
 
 #[get("/parent")]
 pub async fn parent(
     http_request: HttpRequest,
-    token: web::ReqData<AuthToken>,
+    auth: BearerAuth,
     data: web::Data<AppState>,
 ) -> Result<String, Error> {
     let headers = http_request.headers();
@@ -26,7 +25,7 @@ pub async fn parent(
     let uri = format!("http://localhost:{}/v1/child", data.child_port);
     data.client
         .get(uri)
-        .bearer_auth(&token.token)
+        .bearer_auth(auth.token())
         .send()
         .await
         .map_err(|e| error::ErrorInternalServerError(e))?
